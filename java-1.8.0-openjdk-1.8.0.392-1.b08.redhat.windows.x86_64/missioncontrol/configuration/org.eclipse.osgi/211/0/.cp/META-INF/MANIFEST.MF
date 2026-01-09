@@ -1,0 +1,17 @@
+Manifest-Version: 1.0
+Automatic-Module-Name: org.openjdk.jmc.rcp.intro
+Bundle-SymbolicName: org.openjdk.jmc.rcp.intro;singleton:=true
+Built-By: 
+Require-Bundle: org.eclipse.ui,org.eclipse.ui.forms,org.eclipse.core.r
+ untime,org.eclipse.ui.intro,org.openjdk.jmc.rcp.application,org.openj
+ dk.jmc.ui,org.openjdk.jmc.console.ui,org.openjdk.jmc.rjmx
+Bundle-ManifestVersion: 2
+Bundle-ActivationPolicy: lazy
+Bundle-RequiredExecutionEnvironment: JavaSE-1.8
+Bundle-Vendor: Oracle Corporation
+Bundle-Name: Intro Plug-in
+Bundle-Version: 7.1.1.202310112209
+Bundle-Localization: plugin
+Created-By: Apache Maven 3.5.4
+Build-Jdk: 1.8.0_392
+

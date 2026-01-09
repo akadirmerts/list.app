@@ -1,0 +1,26 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "type": "npm",
+            "script": "dev",
+            "problemMatcher": [
+                "$tsc-watch"
+            ],
+            "label": "Run Dev Server",
+            "detail": "pnpm dev",
+            "isBackground": true,
+            "presentation": {
+                "reveal": "always",
+                "panel": "new"
+            }
+        },
+        {
+            "type": "npm",
+            "script": "db:push",
+            "problemMatcher": [],
+            "label": "Update Database Schema",
+            "detail": "pnpm db:push"
+        }
+    ]
+}
