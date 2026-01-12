@@ -2,6 +2,7 @@ import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { GripVertical, Trash2, Edit2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 
 interface SortableListItemProps {
   id: number;
@@ -14,13 +15,13 @@ interface SortableListItemProps {
   onColorChange: (id: number) => void;
 }
 
-const COLOR_MAP: Record<string, { bg: string; text: string }> = {
-  primary: { bg: "bg-primary border-primary", text: "text-primary-foreground" },
-  secondary: { bg: "bg-secondary border-secondary", text: "text-secondary-foreground" },
-  accent: { bg: "bg-accent border-accent", text: "text-accent-foreground" },
-  red: { bg: "bg-red-500 border-red-600", text: "text-white" },
-  blue: { bg: "bg-blue-500 border-blue-600", text: "text-white" },
-  pink: { bg: "bg-pink-500 border-pink-600", text: "text-white" },
+const COLOR_MAP: Record<string, { bg: string; text: string; checkbox: string }> = {
+  primary: { bg: "bg-primary border-primary", text: "text-primary-foreground", checkbox: "border-primary-foreground data-[state=checked]:bg-primary-foreground data-[state=checked]:text-primary" },
+  secondary: { bg: "bg-secondary border-secondary", text: "text-secondary-foreground", checkbox: "border-secondary-foreground data-[state=checked]:bg-secondary-foreground data-[state=checked]:text-secondary" },
+  accent: { bg: "bg-accent border-accent", text: "text-accent-foreground", checkbox: "border-accent-foreground data-[state=checked]:bg-accent-foreground data-[state=checked]:text-accent" },
+  red: { bg: "bg-red-500 border-red-600", text: "text-white", checkbox: "border-white data-[state=checked]:bg-white data-[state=checked]:text-red-500" },
+  blue: { bg: "bg-blue-500 border-blue-600", text: "text-white", checkbox: "border-white data-[state=checked]:bg-white data-[state=checked]:text-blue-500" },
+  pink: { bg: "bg-pink-500 border-pink-600", text: "text-white", checkbox: "border-white data-[state=checked]:bg-white data-[state=checked]:text-pink-500" },
 };
 
 export function SortableListItem({
@@ -68,16 +69,16 @@ export function SortableListItem({
       </button>
 
       {/* Checkbox */}
-      <input
-        type="checkbox"
+      <Checkbox
         checked={completed}
-        onChange={() => onToggleComplete(id)}
-        className="w-5 h-5 rounded cursor-pointer flex-shrink-0"
+        onCheckedChange={() => onToggleComplete(id)}
+        className={`w-6 h-6 rounded-md cursor-pointer border-2 transition-colors ${colorStyle.checkbox}`}
       />
 
       {/* Text */}
       <span
-        className={`flex-1 font-medium ${completed ? "line-through opacity-70" : ""
+        onClick={() => onToggleComplete(id)}
+        className={`flex-1 font-bold text-lg cursor-pointer select-none transition-all ${completed ? "line-through opacity-50" : ""
           } ${colorStyle.text}`}
       >
         {text}

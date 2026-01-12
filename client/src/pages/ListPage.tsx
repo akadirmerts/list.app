@@ -78,9 +78,13 @@ export default function ListPage() {
   const updateListMutation = trpc.lists.update.useMutation();
   const registerSessionMutation = trpc.sessions.register.useMutation();
 
-  // DND Sensors (Moved up to avoid conditional hook execution error)
+  // DND Sensors
   const sensors = useSensors(
-    useSensor(PointerSensor),
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 8,
+      },
+    }),
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
   );
 
@@ -103,7 +107,7 @@ export default function ListPage() {
         });
       } else if (update.type === "item-updated") {
         setItems((prev: ListItemWithUI[]) =>
-          prev.map((item) => (item.id === update.data.id ? update.data : item))
+          prev.map((item) => (item.id === update.data.id ? { ...update.data, completed: Boolean(update.data.completed) } : item))
         );
       } else if (update.type === "item-deleted") {
         setItems((prev: ListItemWithUI[]) => prev.filter((item) => item.id !== update.data.itemId));
@@ -280,11 +284,21 @@ export default function ListPage() {
   const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
     if (over && active.id !== over.id) {
-      const oldIndex = items.findIndex((i) => i.id === active.id);
-      const newIndex = items.findIndex((i) => i.id === over.id);
+      const activeItems = items.filter(i => !i.completed);
+      const oldIndex = activeItems.findIndex((i) => i.id === active.id);
+      const newIndex = activeItems.findIndex((i) => i.id === over.id);
+
       if (oldIndex !== -1 && newIndex !== -1) {
-        const newItems = arrayMove(items, oldIndex, newIndex);
-        setItems(newItems);
+        const newActiveItems = arrayMove(activeItems, oldIndex, newIndex);
+        const completedItems = items.filter(i => i.completed);
+
+        // Update orders for active items
+        const updatedActiveItems = newActiveItems.map((item, idx) => ({
+          ...item,
+          order: idx
+        }));
+
+        setItems([...updatedActiveItems, ...completedItems]);
       }
     }
   };
@@ -362,6 +376,9 @@ export default function ListPage() {
     navigator.clipboard.writeText(url);
     toast.success(t.list.notifications.link_copied);
   };
+
+  const activeItems = items.filter(i => !i.completed);
+  const completedItems = items.filter(i => i.completed);
 
   return (
     <div className="min-h-screen bg-background">
@@ -514,73 +531,88 @@ export default function ListPage() {
           onDragEnd={handleDragEnd}
         >
           <SortableContext
-            items={items.filter(i => !i.completed || showCompleted).map(i => i.id)}
+            items={activeItems.map(i => i.id)}
             strategy={verticalListSortingStrategy}
           >
             <div className="space-y-3">
-              {items.length === 0 ? (
+              {activeItems.length === 0 && completedItems.length === 0 ? (
                 <div className="text-center py-12">
                   <p className="text-lg text-foreground/50 font-medium">
                     {t.list.empty_state}
                   </p>
                 </div>
               ) : (
-                items
-                  .filter((item) => !item.completed || showCompleted)
-                  .map((item) => (
-                    <SortableListItem
-                      key={item.id}
-                      id={item.id}
-                      text={item.text}
-                      completed={item.completed}
-                      color={item.color || "primary"}
-                      onToggleComplete={() => handleToggleComplete(item)}
-                      onDelete={handleDeleteItem}
-                      onEdit={setEditingItemId}
-                      onColorChange={setEditingItemId}
-                    />
-                  ))
+                activeItems.map((item) => (
+                  <SortableListItem
+                    key={item.id}
+                    id={item.id}
+                    text={item.text}
+                    completed={item.completed}
+                    color={item.color || "primary"}
+                    onToggleComplete={() => handleToggleComplete(item)}
+                    onDelete={handleDeleteItem}
+                    onEdit={setEditingItemId}
+                    onColorChange={setEditingItemId}
+                  />
+                ))
               )}
             </div>
           </SortableContext>
         </DndContext>
 
-
-
         {/* Stats and Completed Toggle */}
         {items.length > 0 && (
-          <div className="mt-12 space-y-4">
-            <div className="p-6 bg-white rounded-2xl border-2 border-primary">
+          <div className="mt-12 space-y-6">
+            <div className="p-6 bg-white rounded-2xl border-4 border-primary">
               <div className="grid grid-cols-2 gap-4 text-center">
-                <div>
-                  <p className="text-3xl font-bold text-primary">{items.filter((i) => !i.completed).length}</p>
-                  <p className="text-sm text-foreground/70">{t.list.todo_title}</p>
+                <div className="border-r-2 border-muted border-dashed">
+                  <p className="text-3xl font-black text-primary uppercase">{activeItems.length}</p>
+                  <p className="text-sm font-bold text-foreground/70 uppercase">{t.list.todo_title}</p>
                 </div>
                 <div>
-                  <p className="text-3xl font-bold text-secondary">
-                    {items.filter((i) => i.completed).length}
-                  </p>
-                  <p className="text-sm text-foreground/70">{t.list.completed_title}</p>
+                  <p className="text-3xl font-black text-secondary uppercase">{completedItems.length}</p>
+                  <p className="text-sm font-bold text-foreground/70 uppercase">{t.list.completed_title}</p>
                 </div>
               </div>
             </div>
-            {items.filter((i) => i.completed).length > 0 && !showCompleted && (
-              <Button
-                onClick={() => setShowCompleted(true)}
-                variant="outline"
-                className="w-full btn-memphis"
-              >
-                {t.list.show_completed}
-              </Button>
-            )}
-            {showCompleted && items.filter((i) => i.completed).length > 0 && (
-              <Button
-                onClick={() => setShowCompleted(false)}
-                variant="outline"
-                className="w-full btn-memphis"
-              >
-                {t.list.hide_completed}
-              </Button>
+
+            {completedItems.length > 0 && (
+              <div className="space-y-4">
+                <Button
+                  onClick={() => setShowCompleted(!showCompleted)}
+                  variant="outline"
+                  className="w-full btn-memphis bg-secondary text-secondary-foreground"
+                >
+                  {showCompleted ? (
+                    <><EyeOff className="w-4 h-4 mr-2" /> {t.list.hide_completed}</>
+                  ) : (
+                    <><Eye className="w-4 h-4 mr-2" /> {t.list.show_completed}</>
+                  )}
+                </Button>
+
+                {showCompleted && (
+                  <div className="space-y-3 pt-2 animate-in fade-in slide-in-from-top-4 duration-300">
+                    <div className="flex items-center gap-3 px-2">
+                      <div className="h-px flex-1 bg-muted border-dashed border-b" />
+                      <span className="text-xs font-black uppercase text-foreground/30">{t.list.completed_title}</span>
+                      <div className="h-px flex-1 bg-muted border-dashed border-b" />
+                    </div>
+                    {completedItems.map((item) => (
+                      <SortableListItem
+                        key={item.id}
+                        id={item.id}
+                        text={item.text}
+                        completed={item.completed}
+                        color={item.color || "primary"}
+                        onToggleComplete={() => handleToggleComplete(item)}
+                        onDelete={handleDeleteItem}
+                        onEdit={setEditingItemId}
+                        onColorChange={setEditingItemId}
+                      />
+                    ))}
+                  </div>
+                )}
+              </div>
             )}
           </div>
         )}

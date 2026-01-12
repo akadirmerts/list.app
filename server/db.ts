@@ -294,7 +294,7 @@ export async function updateListItem(
   try {
     const updateData: Record<string, unknown> = {};
     if (updates.text !== undefined) updateData.text = updates.text;
-    if (updates.completed !== undefined) updateData.completed = updates.completed;
+    if (updates.completed !== undefined) updateData.completed = updates.completed ? 1 : 0;
     if (updates.category !== undefined) updateData.category = updates.category;
     if (updates.color !== undefined) updateData.color = updates.color;
     if (updates.order !== undefined) updateData.order = updates.order;
